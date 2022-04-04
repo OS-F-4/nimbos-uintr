@@ -118,3 +118,23 @@ pub fn shmget(key: usize, size: usize, oflag: usize) -> isize {
 pub fn shmat(shmid: isize, shmaddr: usize, flag: usize) -> isize {
     sys_shmat(shmid as usize, shmaddr, flag)
 }
+
+pub fn uintr_register_receiver(handler: usize) -> isize {
+    sys_uintr_register_receiver(handler)
+}
+
+pub fn uintr_register_link(vector: usize, shmem_id: &usize) -> isize {
+    sys_uintr_register_link(vector, shmem_id)
+}
+
+pub fn uintr_register_sender(link_id: usize, shmem_id: &usize) -> isize {
+    sys_uintr_register_sender(link_id, shmem_id)
+}
+
+pub fn uintr_notice(index: usize) -> isize {
+    sys_uintr_notice(index)
+}
+
+pub fn uintr_uiret() -> isize {
+    sys_uintr_uiret()
+}

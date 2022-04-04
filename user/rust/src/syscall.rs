@@ -18,6 +18,11 @@ pub const SYSCALL_SHMGET: usize = 233;
 pub const SYSCALL_SHMAT: usize = 234;
 pub const SYSCALL_SHMDT: usize = 235;
 pub const SYSCALL_SHMCTL: usize = 236;
+pub const SYSCALL_UINTR_REGISTER_RECEIVER: usize = 301;
+pub const SYSCALL_UINTR_REGISTER_LINK: usize = 302;
+pub const SYSCALL_UINTR_REGISTER_SENDER: usize = 303;
+pub const SYSCALL_UINTR_NOTICE: usize = 304;
+pub const SYSCALL_UINTR_UIRET: usize = 305;
 
 pub fn sys_read(fd: usize, buffer: &mut [u8]) -> isize {
     syscall(
@@ -69,4 +74,24 @@ pub fn sys_shmget(key: usize, size: usize, shmflg: usize) -> isize {
 
 pub fn sys_shmat(shmid: usize, shmaddr: usize, shmflg: usize) -> isize {
     syscall(SYSCALL_SHMAT, [shmid, shmaddr, shmflg])
+}
+
+pub fn sys_uintr_register_receiver(handler: usize) -> isize {
+    syscall(SYSCALL_UINTR_REGISTER_RECEIVER, [handler, 0, 0])
+}
+
+pub fn sys_uintr_register_link(vector: usize, shmem_id: &usize) -> isize {
+    syscall(SYSCALL_UINTR_REGISTER_LINK, [vector, shmem_id as *const _ as usize, 0])
+}
+
+pub fn sys_uintr_register_sender(link_id: usize, shmem_id: &usize) -> isize {
+    syscall(SYSCALL_UINTR_REGISTER_SENDER, [link_id, shmem_id as *const _ as usize, 0])
+}
+
+pub fn sys_uintr_notice(index: usize) -> isize {
+    syscall(SYSCALL_UINTR_NOTICE, [index, 0, 0])
+}
+
+pub fn sys_uintr_uiret() -> isize {
+    syscall(SYSCALL_UINTR_UIRET, [0, 0, 0])
 }

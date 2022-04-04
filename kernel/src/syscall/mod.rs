@@ -14,16 +14,23 @@ const SYSCALL_SHMGET: usize = 233;
 const SYSCALL_SHMAT: usize = 234;
 const SYSCALL_SHMDT: usize = 235;
 const SYSCALL_SHMCTL: usize = 236;
+const SYSCALL_UINTR_REGISTER_RECEIVER: usize = 301;
+const SYSCALL_UINTR_REGISTER_LINK: usize = 302;
+const SYSCALL_UINTR_REGISTER_SENDER: usize = 303;
+const SYSCALL_UINTR_NOTICE: usize = 304;
+const SYSCALL_UINTR_UIRET: usize = 305;
 
 mod fs;
 mod task;
 mod time;
 mod shm;
+mod uintr;
 
 use self::fs::*;
 use self::task::*;
 use self::time::*;
 use self::shm::*;
+use self::uintr::*;
 use crate::arch::{instructions, TrapFrame};
 
 pub fn syscall(
@@ -55,6 +62,11 @@ pub fn syscall(
         SYSCALL_SHMAT => sys_shmat(arg0, arg1, arg2),
         SYSCALL_SHMDT => sys_shmdt(),
         SYSCALL_SHMCTL => sys_shmctl(),
+        SYSCALL_UINTR_REGISTER_RECEIVER => sys_uintr_register_receiver(arg0),
+        SYSCALL_UINTR_REGISTER_LINK => sys_uintr_register_link(arg0, arg1.into()),
+        SYSCALL_UINTR_REGISTER_SENDER => sys_uintr_register_sender(arg0, arg1.into()),
+        SYSCALL_UINTR_NOTICE => sys_uintr_notice(arg0),
+        SYSCALL_UINTR_UIRET => sys_uintr_uiret(),
         _ => {
             println!("Unsupported syscall_id: {}", syscall_id);
             crate::task::CurrentTask::get().exit(-1);
