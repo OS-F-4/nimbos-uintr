@@ -108,3 +108,13 @@ pub fn thread_spawn(entry: fn(usize) -> i32, arg: usize) -> usize {
     let newsp = unsafe { THREAD_STACKS[thread_id].as_ptr_range().end as usize };
     sys_clone(entry, arg, newsp)
 }
+
+pub const IPC_PRIVATE: usize = 0;
+
+pub fn shmget(key: usize, size: usize, oflag: usize) -> isize {
+    sys_shmget(key, size, oflag)
+}
+
+pub fn shmat(shmid: isize, shmaddr: usize, flag: usize) -> isize {
+    sys_shmat(shmid as usize, shmaddr, flag)
+}

@@ -4,12 +4,14 @@ mod heap_allocator;
 mod memory_set;
 mod paging;
 mod uaccess;
+mod shared_memory;
 
 pub use address::{PhysAddr, VirtAddr};
 pub use frame_allocator::PhysFrame;
 pub use memory_set::{kernel_aspace, MapArea, MemorySet};
 pub use paging::{GenericPTE, PageTableImpl};
 pub use uaccess::{UserInOutPtr, UserInPtr, UserOutPtr};
+pub use shared_memory::{create_shm_seg, get_shm_seg_paddr_vec};
 
 pub const PAGE_SIZE: usize = 0x1000;
 
@@ -30,4 +32,5 @@ pub fn init_heap_early() {
 pub fn init() {
     frame_allocator::init_frame_allocator();
     memory_set::init_kernel_aspace();
+    shared_memory::init_shared_memory();
 }

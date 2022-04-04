@@ -6,7 +6,7 @@ use super::manager::{TaskLockedCell, TASK_MANAGER};
 use crate::arch::{instructions, TaskContext, TrapFrame};
 use crate::config::KERNEL_STACK_SIZE;
 use crate::loader;
-use crate::mm::{kernel_aspace, MemorySet, VirtAddr};
+use crate::mm::{kernel_aspace, MemorySet, PhysAddr, VirtAddr};
 use crate::percpu::PerCpu;
 use crate::sync::{LazyInit, Mutex};
 
@@ -223,6 +223,10 @@ impl Task {
         for c in self.children.lock().iter() {
             c.traverse(func);
         }
+    }
+
+    pub fn map_shared_frames(&self, shared_paddr_vec: Vec<PhysAddr>) -> Option<VirtAddr> {
+        self.vm.as_ref().unwrap().lock().map_shared_frames(shared_paddr_vec)
     }
 }
 

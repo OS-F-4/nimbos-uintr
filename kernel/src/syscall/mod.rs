@@ -10,14 +10,20 @@ const SYSCALL_EXIT: usize = 60;
 const SYSCALL_WAITPID: usize = 61;
 const SYSCALL_GET_TIME_MS: usize = 96;
 const SYSCALL_CLOCK_GETTIME: usize = 228;
+const SYSCALL_SHMGET: usize = 233;
+const SYSCALL_SHMAT: usize = 234;
+const SYSCALL_SHMDT: usize = 235;
+const SYSCALL_SHMCTL: usize = 236;
 
 mod fs;
 mod task;
 mod time;
+mod shm;
 
 use self::fs::*;
 use self::task::*;
 use self::time::*;
+use self::shm::*;
 use crate::arch::{instructions, TrapFrame};
 
 pub fn syscall(
@@ -45,6 +51,10 @@ pub fn syscall(
         SYSCALL_WAITPID => sys_waitpid(arg0 as isize, arg1.into()),
         SYSCALL_GET_TIME_MS => sys_get_time_ms(),
         SYSCALL_CLOCK_GETTIME => sys_clock_gettime(arg0, arg1.into()),
+        SYSCALL_SHMGET => sys_shmget(arg0, arg1, arg2),
+        SYSCALL_SHMAT => sys_shmat(arg0, arg1, arg2),
+        SYSCALL_SHMDT => sys_shmdt(),
+        SYSCALL_SHMCTL => sys_shmctl(),
         _ => {
             println!("Unsupported syscall_id: {}", syscall_id);
             crate::task::CurrentTask::get().exit(-1);

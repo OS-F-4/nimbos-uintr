@@ -1,4 +1,5 @@
 use alloc::collections::btree_map::{BTreeMap, Entry};
+use alloc::vec::Vec;
 use core::fmt;
 
 use super::address::{align_down, is_aligned, phys_to_virt, virt_to_phys};
@@ -28,6 +29,7 @@ static KERNEL_ASPACE: LazyInit<MemorySet> = LazyInit::new();
 enum Mapper {
     Offset(usize),
     Framed(BTreeMap<VirtAddr, PhysFrame>),
+    Shared(BTreeMap<usize, usize>),
 }
 
 pub struct MapArea {
@@ -72,6 +74,20 @@ impl MapArea {
         }
     }
 
+    pub fn new_shared(start_vaddr: VirtAddr, shared_paddr_vec: Vec<PhysAddr>, flags: MemFlags) -> Self {
+        assert!(start_vaddr.is_aligned());
+        let mut mapping = BTreeMap::new();
+        for i in 0..shared_paddr_vec.len() {
+            mapping.insert(start_vaddr.as_usize() + i * PAGE_SIZE, shared_paddr_vec[i].as_usize());
+        }
+        Self {
+            start: start_vaddr,
+            size: shared_paddr_vec.len() * PAGE_SIZE,
+            flags,
+            mapper: Mapper::Shared(mapping),
+        }
+    }
+
     pub fn dup(&self) -> Self {
         let mapper = match &self.mapper {
             Mapper::Offset(off) => Mapper::Offset(*off),
@@ -86,6 +102,7 @@ impl MapArea {
                 }
                 Mapper::Framed(new_frames)
             }
+            Mapper::Shared(mapping) => Mapper::Shared(mapping.clone()),
         };
         Self {
             start: self.start,
@@ -102,6 +119,10 @@ impl MapArea {
             Mapper::Framed(frames) => match frames.entry(vaddr) {
                 Entry::Occupied(e) => e.get().start_paddr(),
                 Entry::Vacant(e) => e.insert(PhysFrame::alloc_zero().unwrap()).start_paddr(),
+            },
+            Mapper::Shared(mapping) => match mapping.entry(vaddr.as_usize()) {
+                Entry::Occupied(e) => PhysAddr::new(*e.get()),
+                Entry::Vacant(_) => panic!("Vacant entry in shared mapper!"),
             },
         }
     }
@@ -259,6 +280,23 @@ impl MemorySet {
     pub fn page_table_root(&self) -> PhysAddr {
         self.pt.root_paddr()
     }
+
+    pub fn map_shared_frames(&mut self, shared_paddr_vec: Vec<PhysAddr>) -> Option<VirtAddr> {
+        let va_opt = self.areas.values()
+            .map(|area| area.start.as_usize() + area.size)
+            .filter(|addr| *addr < USER_STACK_BASE)  // TODO: more robust
+            .max();
+        if let Some(va) = va_opt {
+            self.insert(MapArea::new_shared(
+                VirtAddr::new(va),
+                shared_paddr_vec,
+                MemFlags::READ | MemFlags::WRITE | MemFlags::USER,
+            ));
+            Some(VirtAddr::new(va))
+        } else {
+            None
+        }
+    }
 }
 
 impl Drop for MemorySet {
@@ -346,6 +384,7 @@ impl fmt::Debug for MapArea {
         match &self.mapper {
             Mapper::Framed(_) => s.field("mapper", &"Frame"),
             Mapper::Offset(off) => s.field("mapper", &alloc::format!("Offset({})", off)),
+            Mapper::Shared(_) => s.field("mapper", &"Shared"),
         }
         .finish()
     }

@@ -14,6 +14,10 @@ pub const SYSCALL_EXEC: usize = 59;
 pub const SYSCALL_EXIT: usize = 60;
 pub const SYSCALL_WAITPID: usize = 61;
 pub const SYSCALL_GET_TIME: usize = 96;
+pub const SYSCALL_SHMGET: usize = 233;
+pub const SYSCALL_SHMAT: usize = 234;
+pub const SYSCALL_SHMDT: usize = 235;
+pub const SYSCALL_SHMCTL: usize = 236;
 
 pub fn sys_read(fd: usize, buffer: &mut [u8]) -> isize {
     syscall(
@@ -57,4 +61,12 @@ pub fn sys_waitpid(pid: isize, exit_code: *mut i32) -> isize {
 
 pub fn sys_nanosleep(req: &TimeSpec) -> isize {
     syscall(SYSCALL_NANOSLEEP, [req as *const _ as usize, 0, 0])
+}
+
+pub fn sys_shmget(key: usize, size: usize, shmflg: usize) -> isize {
+    syscall(SYSCALL_SHMGET, [key, size, shmflg])
+}
+
+pub fn sys_shmat(shmid: usize, shmaddr: usize, shmflg: usize) -> isize {
+    syscall(SYSCALL_SHMAT, [shmid, shmaddr, shmflg])
 }
